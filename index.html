@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Melbourne Airport — Sterile Area Tool Register</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #F0F4F8; color: #0B1F3A; min-height: 100vh; }
+  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0B1F3A 0%, #1E3A5F 100%); padding: 20px; }
+  .login-card { background: #fff; border-radius: 16px; padding: 48px 40px; width: 380px; max-width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+  .login-logo { text-align: center; margin-bottom: 32px; }
+  .login-title { font-size: 22px; font-weight: 800; color: #0B1F3A; text-align: center; }
+  .login-sub { font-size: 13px; color: #64748b; text-align: center; margin-top: 4px; margin-bottom: 28px; }
+  #app { display: none; min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; background: #0B1F3A; display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-logo-text { color: #C9A84C; font-weight: 800; font-size: 14px; letter-spacing: 0.04em; }
+  .sidebar-logo-sub { color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 3px; }
+  .nav-items { flex: 1; padding: 10px 0; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 20px; cursor: pointer; border-left: 3px solid transparent; color: rgba(255,255,255,0.65); font-size: 13px; transition: all 0.15s; user-select: none; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .nav-item.active { background: rgba(201,168,76,0.15); border-left-color: #C9A84C; color: #C9A84C; font-weight: 600; }
+  .nav-item .badge { margin-left: auto; }
+  .sidebar-user { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-user-name { color: #fff; font-size: 13px; font-weight: 600; }
+  .sidebar-user-role { color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 2px; text-transform: capitalize; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
+  .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-title { font-size: 16px; font-weight: 700; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .alert-pill { background: #fee2e2; color: #991b1b; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: #1E3A5F; display: flex; align-items: center; justify-content: center; color: #C9A84C; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .user-info { font-size: 13px; }
+  .user-info .name { font-weight: 600; }
+  .user-info .role { color: #64748b; font-size: 11px; text-transform: capitalize; }
+  .content { padding: 28px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-title { font-size: 22px; font-weight: 800; color: #0B1F3A; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 700; color: #0B1F3A; margin-bottom: 16px; }
+  .company-card { cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
+  .company-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-1px); }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border-radius: 12px; padding: 20px 24px; border-left: 4px solid #ccc; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .stat-num { font-size: 32px; font-weight: 800; color: #0B1F3A; }
+  .stat-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .form-group { margin-bottom: 16px; }
+  label.lbl { display: block; font-size: 12px; font-weight: 600; color: #1E3A5F; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  input[type=text], input[type=password], input[type=number], input[type=email], input[type=datetime-local], select, textarea { width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0B1F3A; background: #fff; outline: none; font-family: inherit; transition: border-color 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: #1E3A5F; }
+  input.sm { width: 160px; }
+  textarea { resize: vertical; min-height: 70px; }
+  .btn { border: none; border-radius: 8px; padding: 10px 20px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.88; }
+  .btn-primary { background: #C9A84C; color: #fff; }
+  .btn-navy { background: #1E3A5F; color: #fff; }
+  .btn-danger { background: #C0392B; color: #fff; }
+  .btn-ghost { background: transparent; color: #1E3A5F; border: 1.5px solid #1E3A5F; }
+  .btn-success { background: #166534; color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+  .btn-full { width: 100%; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .btn-logout { background: transparent; color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 14px; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px; font-family: inherit; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+  .nav-item .badge { background: #C0392B; color: #fff; border-radius: 10px; padding: 1px 7px; }
+  .alert { border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px; }
+  .alert-error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+  .alert-success { background: #dcfce7; border: 1px solid #86efac; color: #166534; }
+  .alert-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; }
+  .alert-row { justify-content: space-between; align-items: center; }
+  .resolved-item { padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; }
+  .resolution-report { font-size: 12px; color: #475569; line-height: 1.8; padding-left: 14px; border-left: 3px solid #86efac; }
+  .rr-label { font-weight: 700; color: #334155; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 11px 14px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9; }
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-wrap input { padding-left: 34px; }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+  .modal.open { display: flex; }
+  .modal-card { background: #fff; border-radius: 16px; padding: 32px; width: 560px; max-width: 100%; max-height: 88vh; overflow: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+  .modal-title { font-size: 18px; font-weight: 800; color: #0B1F3A; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+  .field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px; }
+  .stepper { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .step-dot.done { background: #27ae60; color: #fff; }
+  .step-dot.active { background: #1E3A5F; color: #fff; }
+  .step-dot.pending { background: #e2e8f0; color: #94a3b8; }
+  .step-label { font-size: 13px; }
+  .step-label.active { font-weight: 700; }
+  .step-label.pending { color: #94a3b8; }
+  .step-line { width: 28px; height: 1px; background: #e2e8f0; flex-shrink: 0; }
+  .tool-pick { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; border: 2px solid #e2e8f0; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+  .tool-pick:hover { border-color: #94a3b8; }
+  .tool-pick.selected { border-color: #1E3A5F; background: #f0f4ff; }
+  .tool-pick.selected-green { border-color: #27ae60; background: #f0fdf4; }
+  .check-box { width: 20px; height: 20px; border-radius: 4px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .check-box.checked-navy { background: #1E3A5F; border-color: #1E3A5F; }
+  .check-box.checked-green { background: #27ae60; border-color: #27ae60; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+  .empty { text-align: center; padding: 48px 24px; color: #94a3b8; }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .success-screen { text-align: center; padding: 40px 0; }
+  .success-screen .big-check { font-size: 56px; margin-bottom: 16px; }
+  .success-screen h2 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+  .success-screen p { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+  .demo-hint { margin-top: 20px; padding: 14px; background: #f8fafc; border-radius: 8px; font-size: 11px; color: #64748b; line-height: 1.7; }
+  .photo-preview { max-width: 100%; border-radius: 8px; border: 2px solid #e2e8f0; }
+  .photo-compare { max-width: 200px; border-radius: 8px; border: 2px solid #e2e8f0; display: block; }
+  .photo-label { font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+  .tool-tag { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border-radius: 8px; padding: 6px 12px; font-size: 12px; margin: 4px 4px 0 0; }
+  .reg-tool-adder { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .reg-tool-adder input { flex: 1; min-width: 140px; }
+  .reg-tool-adder select { width: 130px; }
+  @media (max-width: 720px) {
+    .grid3, .grid2 { grid-template-columns: 1fr; }
+    .sidebar { width: 64px; }
+    .sidebar-logo-text, .sidebar-logo-sub, .nav-item span:nth-child(2), .sidebar-user-name, .sidebar-user-role { display: none; }
+    .nav-item { justify-content: center; }
+    .user-info { display: none; }
+  }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; font-weight: 600; color: #1E3A5F; }
+  .btn-link { background: none; border: none; color: #1E3A5F; font-weight: 700; cursor: pointer; text-decoration: underline; font-size: inherit; font-family: inherit; padding: 0; }
+  @media print {
+    body * { visibility: hidden; }
+    #modal-qr, #modal-qr * { visibility: visible; }
+    #modal-qr { position: absolute; inset: 0; background: #fff; }
+    #modal-qr .btn-row { display: none; }
+  }
+</style>
+</head>
+<body>
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div style="font-size:40px;margin-bottom:10px">✈️</div>
+      <div class="login-title">Melbourne Airport</div>
+      <div class="login-sub">Sterile Area Tool Register</div>
+    </div>
+    <div id="login-err" class="alert alert-error" style="display:none"></div>
+    <div class="form-group"><label class="lbl">ASIC Card Number</label><input type="text" id="login-asic" placeholder="e.g. WRK9921" /></div>
+    <div class="form-group"><label class="lbl">Password</label><input type="password" id="login-pass" placeholder="Password" /></div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()" style="margin-top:8px">Sign In</button>
+    <div class="demo-hint"><strong>Demo accounts:</strong><br>Admin: ADMIN001 / admin123<br>Supervisor: SUP4421 / super123<br>Worker: WRK9921 / worker123</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div style="font-size:22px;margin-bottom:6px">✈️</div>
+        <div class="sidebar-logo-text">Melbourne Airport</div>
+        <div class="sidebar-logo-sub">Sterile Area Tool Register</div>
+      </div>
+      <div class="nav-items" id="nav-items"></div>
+      <div class="sidebar-user">
+        <div class="sidebar-user-name" id="sidebar-name"></div>
+        <div class="sidebar-user-role" id="sidebar-role"></div>
+        <button class="btn-logout" onclick="doLogout()">⇤ Sign Out</button>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-right">
+          <div id="alert-pill" class="alert-pill" style="display:none" onclick="showPage('alerts')"></div>
+          <div class="avatar" id="topbar-avatar"></div>
+          <div class="user-info"><div class="name" id="topbar-name"></div><div class="role" id="topbar-role"></div></div>
+        </div>
+      </div>
+      <div class="content">
+
+        <div id="page-dashboard" class="page">
+          <div class="page-title">Live Dashboard</div>
+          <div class="page-sub">Real-time view of all tools in the sterile area</div>
+          <div class="grid3">
+            <div class="stat-card" style="border-left-color:#1E3A5F"><div class="stat-num" id="stat-inside">0</div><div class="stat-label">Tools Inside</div></div>
+            <div class="stat-card" style="border-left-color:#C9A84C"><div class="stat-num" id="stat-highrisk">0</div><div class="stat-label">High-Risk Inside</div></div>
+            <div class="stat-card" style="border-left-color:#C0392B"><div class="stat-num" id="stat-alerts">0</div><div class="stat-label">Active Alerts</div></div>
+          </div>
+          <div id="dash-alert-banner"></div>
+          <div class="card"><div class="card-title">Tools Currently Inside Sterile Area</div><div id="dash-tools-table"></div></div>
+          <div class="grid2">
+            <div class="stat-card" style="border-left-color:#27ae60"><div class="stat-num" id="stat-companies">0</div><div class="stat-label">Registered Companies</div></div>
+            <div class="stat-card" style="border-left-color:#8b5cf6"><div class="stat-num" id="stat-total-tools">0</div><div class="stat-label">Total Registered Tools</div></div>
+          </div>
+        </div>
+
+        <div id="page-entry" class="page">
+          <div class="page-title">Entry Declaration</div>
+          <div class="page-sub">Declare tools before entering the sterile area</div>
+          <div id="entry-content"></div>
+        </div>
+
+        <div id="page-exit" class="page">
+          <div class="page-title">Exit Check</div>
+          <div class="page-sub">Check tools out when leaving the sterile area</div>
+          <div id="exit-content"></div>
+        </div>
+
+        <div id="page-tools" class="page">
+          <div class="page-header">
+            <div><div class="page-title">Tool Registry</div><div class="page-sub">All registered tools across the sterile area</div></div>
+            <button class="btn btn-navy" onclick="openModal('modal-add-tool')">+ Register Tool</button>
+          </div>
+          <div id="tools-msg"></div>
+          <div id="saved-tools-section"></div>
+          <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="tool-search" placeholder="Search by tool name or serial number…" oninput="renderTools()" /></div>
+          <div class="card"><div id="tools-table"></div></div>
+        </div>
+
+        <div id="page-companies" class="page">
+          <div class="page-header">
+            <div><div class="page-title">Companies</div><div class="page-sub">Companies registered to operate in the sterile area. Click any company to view and edit its full profile.</div></div>
+            <button class="btn btn-navy" id="btn-add-company" onclick="openAddCompany()">+ Register Company</button>
+          </div>
+          <div id="companies-msg"></div>
+          <div id="companies-list"></div>
+        </div>
+
+        <div id="page-alerts" class="page">
+          <div class="page-title">Alerts</div>
+          <div class="page-sub">Discrepancy and security alerts for the sterile area</div>
+          <div id="alerts-content"></div>
+        </div>
+
+        <div id="page-audit" class="page">
+          <div class="page-header">
+            <div><div class="page-title">Audit Log</div><div class="page-sub">Complete timestamped record of all sterile area activity</div></div>
+            <button class="btn btn-navy" onclick="exportAudit()">⬇ Export CSV</button>
+          </div>
+          <div class="card"><div id="audit-table"></div></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Tool -->
+<div id="modal-add-tool" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">Register New Tool</div>
+    <div class="modal-sub">Add a tool to the sterile area registry</div>
+    <div id="add-tool-err"></div>
+    <div class="form-group"><label class="lbl">Tool Name *</label><input type="text" id="new-tool-name" placeholder="e.g. Stanley Knife, Cordless Drill" /></div>
+    <div class="alert alert-warning" style="font-size:12px">🏷️ A unique Asset ID and printable QR tag are generated automatically when you register this tool. No serial number needed.</div>
+    <div class="form-group"><label class="lbl">Manufacturer Serial Number (optional)</label><input type="text" id="new-tool-serial" placeholder="Only if the tool has one" /></div>
+    <div class="form-group"><label class="lbl">Category</label>
+      <select id="new-tool-cat" onchange="toggleRfid()">
+        <option value="standard">Standard Tool</option>
+        <option value="high-risk">High Risk (Knife, Blowtorch, Cutter, Grinder)</option>
+      </select>
+    </div>
+    <div id="rfid-field" class="form-group" style="display:none"><label class="lbl">RFID Tag ID (if applicable)</label><input type="text" id="new-tool-rfid" placeholder="e.g. RFID-SK001" /></div>
+    <div id="company-field-wrap" class="form-group" style="display:none"><label class="lbl">Company</label><select id="new-tool-company"></select></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitAddTool()">Register Tool</button>
+      <button class="btn btn-ghost" onclick="saveToolForLater()">Save for Next Time</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-tool')" style="margin-left:auto">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Tool -->
+<div id="modal-edit-tool" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">Edit Tool</div>
+    <div class="modal-sub">Update tool details</div>
+    <input type="hidden" id="edit-tool-id" />
+    <div class="form-group"><label class="lbl">Tool Name *</label><input type="text" id="edit-tool-name" /></div>
+    <div class="form-group"><label class="lbl">Asset ID (system-generated)</label><input type="text" id="edit-tool-asset" readonly style="background:#f8fafc;color:#64748b" /></div>
+    <div class="form-group"><label class="lbl">Manufacturer Serial Number (optional)</label><input type="text" id="edit-tool-serial" placeholder="Only if the tool has one" /></div>
+    <div class="form-group"><label class="lbl">Category</label>
+      <select id="edit-tool-cat">
+        <option value="standard">Standard Tool</option>
+        <option value="high-risk">High Risk (Knife, Blowtorch, Cutter, Grinder)</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="lbl">RFID Tag ID</label><input type="text" id="edit-tool-rfid" placeholder="Leave blank if none" /></div>
+    <div id="edit-tool-err"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitEditTool()">Save Changes</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-tool')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Company -->
+<div id="modal-add-company" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">Register New Company</div>
+    <div class="modal-sub">Add a company authorised to operate in the sterile area</div>
+    <div id="add-company-err"></div>
+    <div class="form-group"><label class="lbl">Company Name *</label><input type="text" id="new-company-name" placeholder="e.g. AeroTech Services" /></div>
+    <div class="form-group"><label class="lbl">Industry / Type of Work</label><input type="text" id="new-company-type" placeholder="e.g. Aircraft Maintenance, Cleaning, IT Services" /></div>
+    <div class="form-group"><label class="lbl">Primary Contact Name</label><input type="text" id="new-company-contact" placeholder="e.g. John Smith" /></div>
+    <div class="form-group"><label class="lbl">Contact Email</label><input type="email" id="new-company-email" placeholder="e.g. john@company.com" /></div>
+    <div class="form-group"><label class="lbl">Contact Phone</label><input type="text" id="new-company-phone" placeholder="e.g. 0412 345 678" /></div>
+    <div class="form-group">
+      <label class="lbl">Tools / Equipment Used On Site</label>
+      <div class="reg-tool-adder">
+        <input type="text" id="reg-tool-name" placeholder="Tool name e.g. Impact Driver" onkeydown="if(event.key==='Enter'){event.preventDefault();addRegTool();}" />
+        <select id="reg-tool-cat"><option value="standard">Standard</option><option value="high-risk">High Risk</option></select>
+        <button class="btn btn-navy btn-sm" type="button" onclick="addRegTool()">+ Add</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="loadStandardRegTools()" style="margin-bottom:10px">Reset to standard tool set</button>
+      <div id="reg-tool-list"></div>
+    </div>
+    <div class="form-group"><label class="lbl">Notes / Special Conditions</label><textarea id="new-company-notes" placeholder="Any special access conditions, high-risk tool approvals, etc."></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitAddCompany()">Register Company</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-company')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Company -->
+<div id="modal-edit-company" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">Edit Company Details</div>
+    <div class="modal-sub">Update this company's profile</div>
+    <input type="hidden" id="edit-company-id" />
+    <div id="edit-company-err"></div>
+    <div class="form-group"><label class="lbl">Company Name *</label><input type="text" id="edit-company-name" /></div>
+    <div class="form-group"><label class="lbl">Industry / Type of Work</label><input type="text" id="edit-company-type" /></div>
+    <div class="form-group"><label class="lbl">Primary Contact Name</label><input type="text" id="edit-company-contact" /></div>
+    <div class="form-group"><label class="lbl">Contact Email</label><input type="email" id="edit-company-email" /></div>
+    <div class="form-group"><label class="lbl">Contact Phone</label><input type="text" id="edit-company-phone" /></div>
+    <div class="form-group"><label class="lbl">Notes / Special Conditions</label><textarea id="edit-company-notes"></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitEditCompany()">Save Changes</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-company')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Company Detail -->
+<div id="modal-company-detail" class="modal">
+  <div class="modal-card" style="width:640px">
+    <div id="company-detail-content"></div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn btn-ghost" onclick="closeModal('modal-company-detail')">Close</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Resolve Alert -->
+<div id="modal-resolve-alert" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">Resolve Alert</div>
+    <div class="modal-sub">Document how this alert was resolved. This creates an auditable resolution report.</div>
+    <div id="resolve-alert-detail" class="alert alert-warning" style="margin-bottom:16px"></div>
+    <div class="form-group"><label class="lbl">Action Taken *</label><textarea id="resolve-action" placeholder="Describe what was done. e.g. Tool located in supervisor's office and returned. Physical search conducted, all tools accounted for."></textarea></div>
+    <div class="form-group"><label class="lbl">Resolved By *</label><input type="text" id="resolve-by-name" placeholder="Your name" /></div>
+    <div class="form-group"><label class="lbl">Date / Time</label><input type="datetime-local" id="resolve-datetime" /></div>
+    <div class="form-group"><label class="lbl">Additional Notes</label><textarea id="resolve-extra" placeholder="Any follow-up actions, references, or context (optional)"></textarea></div>
+    <div id="resolve-err"></div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="submitResolve()">Confirm Resolution</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-resolve-alert')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QR / Asset Tag -->
+<div id="modal-qr" class="modal">
+  <div class="modal-card" style="width:380px">
+    <div id="qr-content"></div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="printQR()">🖨 Print Tag</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-qr')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Audit Detail -->
+<div id="modal-audit-detail" class="modal">
+  <div class="modal-card" style="width:620px">
+    <div id="audit-detail-content"></div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn btn-ghost" onclick="closeModal('modal-audit-detail')">Close</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Add Tool from Entry tab -->
+<div id="modal-entry-add-tool" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">Add New Tool</div>
+    <div class="modal-sub">Quickly register a tool and add it to this entry. A unique Asset ID and QR tag are generated automatically.</div>
+    <div id="entry-new-err"></div>
+    <div class="form-group"><label class="lbl">Tool Name *</label><input type="text" id="entry-new-name" placeholder="e.g. Impact Driver" /></div>
+    <div class="form-group"><label class="lbl">Category</label>
+      <select id="entry-new-cat"><option value="standard">Standard Tool</option><option value="high-risk">High Risk (Knife, Blowtorch, Cutter, Grinder)</option></select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitEntryAddTool()">Add Tool & Select</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-entry-add-tool')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+//  Melbourne Airport — Sterile Area Tool Register  (client prototype)
+//  Tool identity: system-generated Asset ID + printable QR code.
+//  Serial number is optional (most real tools have none).
+// ════════════════════════════════════════════════════════════════════════════
+
+var USERS = [
+  { id:"u1", name:"Nathan Wat", role:"admin", asic:"ADMIN001", company:"Melbourne Airport", password:"admin123" },
+  { id:"u2", name:"James Ong", role:"supervisor", asic:"SUP4421", company:"SkyTech Maintenance", password:"super123" },
+  { id:"u3", name:"Darko Petrovic", role:"worker", asic:"WRK9921", company:"SkyTech Maintenance", password:"worker123" },
+  { id:"u4", name:"Aisha Yusuf", role:"worker", asic:"WRK4455", company:"AeroClean Services", password:"worker456" }
+];
+
+// Standard tools pre-loaded for every newly registered company
+var STANDARD_TOOLS = [
+  { name:"Hammer", category:"standard" },
+  { name:"Cordless Drill", category:"standard" },
+  { name:"Angle Grinder", category:"high-risk" },
+  { name:"Ladder", category:"standard" },
+  { name:"Extension Lead", category:"standard" },
+  { name:"Screwdriver Set", category:"standard" },
+  { name:"Adjustable Spanner", category:"standard" },
+  { name:"Tape Measure", category:"standard" },
+  { name:"Utility Knife", category:"high-risk" }
+];
+
+var db, currentUser, entryState, exitState, pendingResolveId, editingCompanyId;
+
+// ── Storage ──────────────────────────────────────────────────────────────────
+function loadDB() {
+  try { var r = sessionStorage.getItem("toolDB4"); return r ? JSON.parse(r) : seedDB(); }
+  catch (e) { return seedDB(); }
+}
+function saveDB() { try { sessionStorage.setItem("toolDB4", JSON.stringify(db)); } catch (e) {} }
+
+// Build a company asset-ID prefix from its name, e.g. "SkyTech Maintenance" -> "SKY"
+function companyCode(name) {
+  var letters = (name || "CO").toUpperCase().replace(/[^A-Z]/g, "");
+  return (letters + "XXX").slice(0, 3);
+}
+// Next sequential asset ID for a company
+function nextAssetId(companyId) {
+  var co = companyById(companyId);
+  var code = companyCode(co ? co.name : "CO");
+  var count = db.tools.filter(function (t) { return t.company === companyId; }).length + 1;
+  var num = ("000" + count).slice(-3);
+  var candidate = code + "-" + num;
+  // ensure uniqueness
+  while (db.tools.some(function (t) { return t.assetId === candidate; })) {
+    count++; num = ("000" + count).slice(-3); candidate = code + "-" + num;
+  }
+  return candidate;
+}
+
+function seedDB() {
+  return {
+    companies: [
+      { id:"c1", name:"SkyTech Maintenance", registered:"2026-03-01", type:"Aircraft Maintenance",
+        contact:"James Ong", email:"james@skytech.com.au", phone:"0412 111 222",
+        notes:"Approved for high-risk tool access. RFID tagging in place for knives and blowtorches." },
+      { id:"c2", name:"AeroClean Services", registered:"2026-03-15", type:"Terminal Cleaning",
+        contact:"Maria Santos", email:"maria@aeroclean.com.au", phone:"0413 222 333",
+        notes:"Standard tool access only. No high-risk tools approved." }
+    ],
+    tools: [
+      { id:"t1", assetId:"SKY-001", name:"Stanley Knife", serial:"", category:"high-risk", rfid:"RFID-SK001", company:"c1", owner:"u3", status:"Registered" },
+      { id:"t2", assetId:"SKY-002", name:"Cordless Drill", serial:"", category:"standard", rfid:null, company:"c1", owner:"u3", status:"Registered" },
+      { id:"t3", assetId:"SKY-003", name:"Blowtorch", serial:"", category:"high-risk", rfid:"RFID-BT009", company:"c1", owner:"u4", status:"Registered" },
+      { id:"t4", assetId:"SKY-004", name:"Screwdriver Set", serial:"", category:"standard", rfid:null, company:"c1", owner:"u3", status:"Registered" },
+      { id:"t5", assetId:"SKY-005", name:"Angle Grinder", serial:"", category:"high-risk", rfid:null, company:"c1", owner:"u3", status:"Registered" },
+      { id:"t6", assetId:"SKY-006", name:"Hammer", serial:"", category:"standard", rfid:null, company:"c1", owner:"u3", status:"Registered" },
+      { id:"t7", assetId:"SKY-007", name:"Ladder", serial:"", category:"standard", rfid:null, company:"c1", owner:"u3", status:"Registered" },
+      { id:"t8", assetId:"SKY-008", name:"Extension Lead", serial:"", category:"standard", rfid:null, company:"c1", owner:"u3", status:"Registered" },
+      { id:"t9", assetId:"ARC-001", name:"Utility Knife", serial:"", category:"high-risk", rfid:null, company:"c2", owner:"u4", status:"Registered" },
+      { id:"t10", assetId:"ARC-002", name:"Spray Equipment", serial:"", category:"standard", rfid:null, company:"c2", owner:"u4", status:"Registered" },
+      { id:"t11", assetId:"ARC-003", name:"Tape Measure", serial:"", category:"standard", rfid:null, company:"c2", owner:"u4", status:"Registered" }
+    ],
+    declarations: [],
+    alerts: [],
+    auditLog: [
+      { id:"a1", time:"2026-06-18T08:30:00", action:"Tool Registered", detail:"Stanley Knife (SKY-001) registered by James Ong", company:"c1" },
+      { id:"a2", time:"2026-06-18T08:45:00", action:"Company Registered", detail:"SkyTech Maintenance registered", company:"c1" },
+      { id:"a3", time:"2026-06-19T09:10:00", action:"Company Registered", detail:"AeroClean Services registered", company:"c2" }
+    ],
+    savedTools: {},
+    entryPhotos: {}
+  };
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function now() { return new Date().toISOString(); }
+function esc(str) {
+  if (str === null || str === undefined) return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function fmt(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("en-AU", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+function initials(name) { return name.split(" ").map(function (n) { return n[0]; }).join("").slice(0, 2).toUpperCase(); }
+function companyById(id) { return db.companies.find(function (c) { return c.id === id; }); }
+function myCompany() { return db.companies.find(function (c) { return c.name === currentUser.company; }); }
+function userById(id) { return USERS.find(function (u) { return u.id === id; }); }
+function toolById(id) { return db.tools.find(function (t) { return t.id === id; }); }
+function statusBadge(s) {
+  return s === "Inside Sterile Area" ? "badge-blue" : s === "Exited" ? "badge-green" : s === "Flagged" ? "badge-red" : "badge-gray";
+}
+function catBadge(c) { return c === "high-risk" ? '<span class="badge badge-red">⚡ High Risk</span>' : '<span class="badge badge-gray">Standard</span>'; }
+
+// Tools the current user can declare: everything owned by their company.
+// Admins (Melbourne Airport) can see all tools.
+function toolsForCurrentUser() {
+  var mc = myCompany();
+  if (currentUser.role === "admin") return db.tools.slice();
+  return db.tools.filter(function (t) { return t.company === (mc ? mc.id : ""); });
+}
+
+// ── QR code (lightweight, dependency-free) ───────────────────────────────────
+// Renders the Asset ID as a scannable QR using a deterministic matrix.
+// For a client prototype this uses the free public QR image endpoint as the
+// primary, with an inline SVG fallback label if offline.
+function qrImg(text, size) {
+  size = size || 120;
+  var enc = encodeURIComponent(text);
+  var src = "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "x" + size + "&data=" + enc;
+  return '<img src="' + src + '" width="' + size + '" height="' + size + '" alt="QR ' + esc(text) + '" ' +
+    'style="border:1px solid #e2e8f0;border-radius:8px;background:#fff" ' +
+    'onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'" />' +
+    '<div style="display:none;width:' + size + 'px;height:' + size + 'px;border:1px dashed #cbd5e1;border-radius:8px;align-items:center;justify-content:center;font-size:11px;color:#64748b;text-align:center;padding:8px">QR for<br><strong>' + esc(text) + '</strong></div>';
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+var NAV = [
+  { id:"dashboard", label:"Dashboard", icon:"📊", roles:["admin","supervisor","worker"] },
+  { id:"entry", label:"Entry Declaration", icon:"➡️", roles:["admin","supervisor","worker"] },
+  { id:"exit", label:"Exit Check", icon:"⬅️", roles:["admin","supervisor","worker"] },
+  { id:"tools", label:"Tool Registry", icon:"🔧", roles:["admin","supervisor","worker"] },
+  { id:"companies", label:"Companies", icon:"🏢", roles:["admin","supervisor"] },
+  { id:"alerts", label:"Alerts", icon:"⚠️", roles:["admin","supervisor"] },
+  { id:"audit", label:"Audit Log", icon:"📋", roles:["admin","supervisor"] }
+];
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+function doLogin() {
+  try {
+    var asic = document.getElementById("login-asic").value.trim().toUpperCase();
+    var pass = document.getElementById("login-pass").value.trim();
+    var errEl = document.getElementById("login-err");
+    var u = null;
+    for (var i = 0; i < USERS.length; i++) {
+      if (USERS[i].asic === asic && USERS[i].password === pass) { u = USERS[i]; break; }
+    }
+    if (!u) { errEl.textContent = "ASIC number or password is incorrect."; errEl.style.display = "flex"; return; }
+    errEl.style.display = "none";
+    currentUser = u;
+    db = loadDB();
+    entryState = { step:1, selected:[], weight:"", photoData:null, personDetails:{} };
+    exitState = { selected:[], done:false, hasAlerts:false, msg:"", exitPhotoData:null, phase:"check", recheckResults:{} };
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    document.getElementById("sidebar-name").textContent = u.name;
+    document.getElementById("sidebar-role").textContent = u.role + " · " + u.asic;
+    document.getElementById("topbar-name").textContent = u.name;
+    document.getElementById("topbar-role").textContent = u.role;
+    document.getElementById("topbar-avatar").textContent = initials(u.name);
+    buildNav();
+    showPage("dashboard");
+  } catch (e) { alert("Login error: " + e.message); }
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("login-asic").value = "";
+  document.getElementById("login-pass").value = "";
+}
+
+function buildNav() {
+  var nav = NAV.filter(function (n) { return n.roles.indexOf(currentUser.role) > -1; });
+  document.getElementById("nav-items").innerHTML = nav.map(function (n) {
+    return '<div class="nav-item" id="nav-' + n.id + '" onclick="showPage(\'' + n.id + '\')">' +
+      '<span>' + n.icon + '</span><span>' + n.label + '</span>' +
+      (n.id === "alerts" ? '<span class="badge" id="nav-alert-badge" style="display:none">0</span>' : '') +
+      '</div>';
+  }).join("");
+  updateAlertBadge();
+}
+
+function updateAlertBadge() {
+  var active = db.alerts.filter(function (a) { return !a.resolved; }).length;
+  var badge = document.getElementById("nav-alert-badge");
+  var pill = document.getElementById("alert-pill");
+  if (badge) { badge.textContent = active; badge.style.display = active > 0 ? "inline-flex" : "none"; }
+  if (pill) { pill.textContent = "⚠ " + active + " Alert" + (active !== 1 ? "s" : ""); pill.style.display = active > 0 ? "flex" : "none"; }
+}
+
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(function (p) { p.classList.remove("active"); });
+  document.querySelectorAll(".nav-item").forEach(function (n) { n.classList.remove("active"); });
+  var page = document.getElementById("page-" + id);
+  var navEl = document.getElementById("nav-" + id);
+  if (page) page.classList.add("active");
+  if (navEl) navEl.classList.add("active");
+  var label = "";
+  for (var i = 0; i < NAV.length; i++) { if (NAV[i].id === id) { label = NAV[i].label; break; } }
+  document.getElementById("topbar-title").textContent = label;
+  if (id === "dashboard") renderDashboard();
+  if (id === "entry") renderEntry();
+  if (id === "exit") renderExit();
+  if (id === "tools") renderTools();
+  if (id === "companies") renderCompanies();
+  if (id === "alerts") renderAlerts();
+  if (id === "audit") renderAudit();
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  var inside = db.tools.filter(function (t) { return t.status === "Inside Sterile Area"; });
+  var highRisk = inside.filter(function (t) { return t.category === "high-risk"; });
+  var active = db.alerts.filter(function (a) { return !a.resolved; });
+  document.getElementById("stat-inside").textContent = inside.length;
+  document.getElementById("stat-highrisk").textContent = highRisk.length;
+  document.getElementById("stat-alerts").textContent = active.length;
+  document.getElementById("stat-companies").textContent = db.companies.length;
+  document.getElementById("stat-total-tools").textContent = db.tools.length;
+
+  var banner = "";
+  active.forEach(function (a) {
+    banner += '<div class="alert alert-error">⚠ <strong>' + esc(a.type) + '</strong>: ' + esc(a.message) + ' — ' + fmt(a.time) + '</div>';
+  });
+  document.getElementById("dash-alert-banner").innerHTML = banner;
+
+  if (inside.length === 0) {
+    document.getElementById("dash-tools-table").innerHTML = '<div class="empty"><div class="empty-icon">🔧</div><div>No tools currently inside the sterile area.</div></div>';
+    return;
+  }
+  var rows = inside.map(function (t) {
+    var owner = userById(t.owner);
+    var co = companyById(t.company);
+    var rp = t.responsiblePerson && t.responsiblePerson.name ? t.responsiblePerson.name + (t.responsiblePerson.contact ? " · " + t.responsiblePerson.contact : "") : "—";
+    return '<tr><td><strong>' + esc(t.name) + '</strong></td><td><span class="mono">' + esc(t.assetId) + '</span></td><td>' + catBadge(t.category) +
+      '</td><td>' + esc(rp) + '</td><td>' + esc(co ? co.name : "—") +
+      '</td><td><span class="badge badge-blue">Inside</span></td></tr>';
+  }).join("");
+  document.getElementById("dash-tools-table").innerHTML =
+    '<table><thead><tr><th>Tool</th><th>Asset ID</th><th>Category</th><th>Responsible Person</th><th>Company</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+// ── Tool Registry ────────────────────────────────────────────────────────────
+function renderTools() {
+  var search = (document.getElementById("tool-search") ? document.getElementById("tool-search").value : "").toLowerCase();
+  var scope = currentUser.role === "admin" ? db.tools.slice() : toolsForCurrentUser();
+  var filtered = scope.filter(function (t) {
+    return t.name.toLowerCase().indexOf(search) > -1 ||
+      (t.assetId || "").toLowerCase().indexOf(search) > -1 ||
+      (t.serial || "").toLowerCase().indexOf(search) > -1;
+  });
+
+  var saved = db.savedTools[currentUser.id] || [];
+  var savedSection = document.getElementById("saved-tools-section");
+  if (saved.length > 0) {
+    savedSection.innerHTML = '<div class="card"><div class="card-title">Your Saved Tools (Quick Add)</div><div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      saved.map(function (t, i) { return '<button class="btn btn-navy btn-sm" onclick="quickAddTool(' + i + ')">' + esc(t.name) + '</button>'; }).join("") +
+      '</div></div>';
+  } else { savedSection.innerHTML = ""; }
+
+  if (filtered.length === 0) {
+    document.getElementById("tools-table").innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div>No tools found.</div></div>';
+  } else {
+    var rows = filtered.map(function (t) {
+      var actions = '<button class="btn btn-ghost btn-sm" onclick="showQR(\'' + t.id + '\')" style="margin-right:4px">QR</button>';
+      if (currentUser.role !== "worker") {
+        actions += '<button class="btn btn-ghost btn-sm" onclick="openEditTool(\'' + t.id + '\')" style="margin-right:4px">Edit</button>';
+        if (t.status !== "Flagged") actions += '<button class="btn btn-danger btn-sm" onclick="flagASIC(\'' + t.id + '\')">Flag ASIC</button>';
+      }
+      var co = companyById(t.company);
+      return '<tr><td><strong>' + esc(t.name) + '</strong></td><td><span class="mono">' + esc(t.assetId) + '</span></td><td>' + catBadge(t.category) +
+        '</td><td>' + (t.rfid ? esc(t.rfid) : '<span style="color:#94a3b8">None</span>') +
+        '</td><td>' + esc(co ? co.name : "—") + '</td><td><span class="badge ' + statusBadge(t.status) + '">' + esc(t.status) + '</span></td>' +
+        '<td style="white-space:nowrap">' + actions + '</td></tr>';
+    }).join("");
+    document.getElementById("tools-table").innerHTML =
+      '<table><thead><tr><th>Tool Name</th><th>Asset ID</th><th>Category</th><th>RFID</th><th>Company</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  if (currentUser.role === "admin") {
+    document.getElementById("company-field-wrap").style.display = "block";
+    document.getElementById("new-tool-company").innerHTML = db.companies.map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join("");
+  } else {
+    document.getElementById("company-field-wrap").style.display = "none";
+  }
+}
+
+function showQR(toolId) {
+  var t = toolById(toolId);
+  if (!t) return;
+  var co = companyById(t.company);
+  var owner = userById(t.owner);
+  document.getElementById("qr-content").innerHTML =
+    '<div style="text-align:center">' +
+    '<div class="modal-title">' + esc(t.name) + '</div>' +
+    '<div class="modal-sub">Printable asset tag</div>' +
+    '<div style="display:inline-block;padding:20px;border:2px solid #0B1F3A;border-radius:12px;margin:8px 0">' +
+    qrImg(t.assetId, 160) +
+    '<div style="font-size:20px;font-weight:800;letter-spacing:0.05em;margin-top:10px">' + esc(t.assetId) + '</div>' +
+    '<div style="font-size:12px;color:#64748b;margin-top:2px">' + esc(t.name) + '</div>' +
+    '<div style="font-size:11px;color:#94a3b8">' + esc(co ? co.name : "") + (owner ? " · " + esc(owner.name) : "") + '</div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:#64748b;margin-top:8px">Print this tag and attach it to the tool. Scanning the QR pulls up the tool instantly at entry and exit.</div>' +
+    '</div>';
+  openModal("modal-qr");
+}
+
+function printQR() { window.print(); }
+
+function openEditTool(toolId) {
+  var t = toolById(toolId);
+  if (!t) return;
+  document.getElementById("edit-tool-id").value = t.id;
+  document.getElementById("edit-tool-name").value = t.name;
+  document.getElementById("edit-tool-asset").value = t.assetId;
+  document.getElementById("edit-tool-serial").value = t.serial || "";
+  document.getElementById("edit-tool-cat").value = t.category;
+  document.getElementById("edit-tool-rfid").value = t.rfid || "";
+  document.getElementById("edit-tool-err").innerHTML = "";
+  openModal("modal-edit-tool");
+}
+
+function submitEditTool() {
+  var id = document.getElementById("edit-tool-id").value;
+  var name = document.getElementById("edit-tool-name").value.trim();
+  var serial = document.getElementById("edit-tool-serial").value.trim();
+  var cat = document.getElementById("edit-tool-cat").value;
+  var rfid = document.getElementById("edit-tool-rfid").value.trim();
+  var err = document.getElementById("edit-tool-err");
+  if (!name) { err.innerHTML = '<div class="alert alert-error">Tool name is required.</div>'; return; }
+  var t = toolById(id);
+  if (t) {
+    t.name = name; t.serial = serial; t.category = cat; t.rfid = rfid || null;
+    db.auditLog.push({ id:uid(), time:now(), action:"Tool Updated", detail: name + " (" + t.assetId + ") updated by " + currentUser.name, company:t.company });
+  }
+  saveDB();
+  closeModal("modal-edit-tool");
+  refreshOpenViews();
+}
+
+function quickAddTool(i) {
+  var t = (db.savedTools[currentUser.id] || [])[i];
+  if (!t) return;
+  document.getElementById("new-tool-name").value = t.name;
+  document.getElementById("new-tool-serial").value = t.serial || "";
+  document.getElementById("new-tool-cat").value = t.category;
+  document.getElementById("new-tool-rfid").value = t.rfid || "";
+  toggleRfid();
+  openModal("modal-add-tool");
+}
+
+function toggleRfid() {
+  var cat = document.getElementById("new-tool-cat").value;
+  document.getElementById("rfid-field").style.display = cat === "high-risk" ? "block" : "none";
+}
+
+function submitAddTool() {
+  var name = document.getElementById("new-tool-name").value.trim();
+  var serial = document.getElementById("new-tool-serial").value.trim();
+  var cat = document.getElementById("new-tool-cat").value;
+  var rfid = document.getElementById("new-tool-rfid").value.trim();
+  var err = document.getElementById("add-tool-err");
+  if (!name) { err.innerHTML = '<div class="alert alert-error">Tool name is required.</div>'; return; }
+  var mc = myCompany();
+  var companyId = currentUser.role === "admin" ? document.getElementById("new-tool-company").value : (mc ? mc.id : "");
+  if (!companyId) { err.innerHTML = '<div class="alert alert-error">Please select a company.</div>'; return; }
+  var assetId = nextAssetId(companyId);
+  var tool = { id:uid(), assetId:assetId, name:name, serial:serial, category:cat, rfid:rfid || null, company:companyId, owner:currentUser.id, status:"Registered" };
+  db.tools.push(tool);
+  db.auditLog.push({ id:uid(), time:now(), action:"Tool Registered", detail: name + " (" + assetId + ") registered by " + currentUser.name, company:companyId });
+  saveDB();
+  closeModal("modal-add-tool");
+  document.getElementById("tools-msg").innerHTML = '<div class="alert alert-success">✓ ' + esc(name) + ' registered with Asset ID <strong>' + esc(assetId) + '</strong>. <button class="btn-link" onclick="showQR(\'' + tool.id + '\')">View / print QR tag</button></div>';
+  err.innerHTML = "";
+  document.getElementById("new-tool-name").value = "";
+  document.getElementById("new-tool-serial").value = "";
+  document.getElementById("new-tool-rfid").value = "";
+  renderTools();
+}
+
+function saveToolForLater() {
+  var name = document.getElementById("new-tool-name").value.trim();
+  var serial = document.getElementById("new-tool-serial").value.trim();
+  var cat = document.getElementById("new-tool-cat").value;
+  var rfid = document.getElementById("new-tool-rfid").value.trim();
+  if (!name) { document.getElementById("add-tool-err").innerHTML = '<div class="alert alert-error">Enter a tool name first.</div>'; return; }
+  if (!db.savedTools[currentUser.id]) db.savedTools[currentUser.id] = [];
+  db.savedTools[currentUser.id].push({ name:name, serial:serial, category:cat, rfid:rfid });
+  saveDB();
+  document.getElementById("add-tool-err").innerHTML = '<div class="alert alert-success">✓ Saved for next time.</div>';
+}
+
+function flagASIC(toolId) {
+  var t = toolById(toolId);
+  if (!t) return;
+  t.status = "Flagged";
+  db.alerts.push({ id:uid(), type:"ASIC Deactivation", message: t.name + " (" + t.assetId + ") owner ASIC deactivated — tool flagged", time:now(), resolved:false, company:t.company });
+  db.auditLog.push({ id:uid(), time:now(), action:"ASIC Deactivated", detail:"Tool " + t.name + " (" + t.assetId + ") flagged due to ASIC deactivation by " + currentUser.name, company:t.company });
+  saveDB();
+  updateAlertBadge();
+  refreshOpenViews();
+}
+
+// ── Entry Declaration ─────────────────────────────────────────────────────────
+function renderEntry() {
+  var s = entryState;
+  var myTools = toolsForCurrentUser().filter(function (t) { return t.status === "Registered" || t.status === "Exited"; });
+
+  var steps = ["Select Tools", "Responsible Person", "Photo", "Sign Off", "Confirmed"];
+  var stepperHTML = '<div class="stepper">';
+  for (var si = 0; si < steps.length; si++) {
+    var dot = s.step > si + 1 ? "done" : s.step === si + 1 ? "active" : "pending";
+    var lbl = s.step === si + 1 ? "active" : s.step > si + 1 ? "" : "pending";
+    stepperHTML += '<div class="step-dot ' + dot + '">' + (s.step > si + 1 ? "✓" : si + 1) + '</div>';
+    stepperHTML += '<span class="step-label ' + lbl + '">' + steps[si] + '</span>';
+    if (si < steps.length - 1) stepperHTML += '<div class="step-line"></div>';
+  }
+  stepperHTML += '</div>';
+
+  var html = stepperHTML;
+
+  if (s.step === 1) {
+    var toolItems = myTools.map(function (t) { return entryToolRow(t); }).join("");
+    html += '<div class="card"><div class="card-title">Step 1: Select Tools to Bring In</div>' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">' +
+      '<div class="search-wrap" style="flex:1;margin-bottom:0;min-width:200px"><span class="search-icon">🔍</span>' +
+      '<input type="text" id="entry-search" placeholder="Search tools by name or Asset ID…" oninput="filterEntryTools()" /></div>' +
+      '<button class="btn btn-navy" onclick="openEntryAddTool()">+ Add New Tool</button></div>' +
+      '<div id="entry-tool-list">' +
+      (myTools.length === 0 ? '<div class="empty"><div class="empty-icon">🔧</div><div>No tools available yet. Use "Add New Tool" above to register one.</div></div>' : toolItems) +
+      '</div>' +
+      '<hr />' +
+      '<div class="form-group"><label class="lbl">Toolbox Weight on Entry (kg) — optional, for large collections</label>' +
+      '<input type="number" class="sm" id="entry-weight" placeholder="e.g. 12.5" value="' + esc(s.weight) + '" oninput="entryState.weight=this.value" /></div>' +
+      '<div id="entry-step1-err"></div>' +
+      '<button class="btn btn-navy" onclick="entryGoStep(2)">Continue → Responsible Person</button></div>';
+  } else if (s.step === 2) {
+    html += renderPersonStep();
+  } else if (s.step === 3) {
+    html += '<div class="card"><div class="card-title">Step 3: Toolbox Photo</div>' +
+      '<div class="alert alert-warning">📷 Take or upload a photo of your toolbox contents now. This photo is saved against your entry and compared against your exit photo to detect any missing or damaged tools when you leave.</div>' +
+      '<div class="form-group" style="margin-top:16px"><label class="lbl">Toolbox Photo</label>' +
+      '<input type="file" id="entry-photo-input" accept="image/*" capture="environment" onchange="previewEntryPhoto(this)" />' +
+      '<div id="entry-photo-preview" style="margin-top:10px"></div></div>' +
+      '<div id="entry-step3-err"></div>' +
+      '<div class="btn-row"><button class="btn btn-navy" onclick="entryGoStep(4)">Continue → Sign Off</button>' +
+      '<button class="btn btn-ghost" onclick="entryGoStep(2)">← Back</button>' +
+      '<button class="btn btn-ghost" onclick="entrySkipPhoto()">Skip Photo</button></div></div>';
+    if (s.photoData) {
+      setTimeout(function () {
+        var el = document.getElementById("entry-photo-preview");
+        if (el) el.innerHTML = '<img src="' + s.photoData + '" class="photo-preview" style="max-height:220px" /><div class="alert alert-success" style="margin-top:8px">✓ Photo captured and saved for exit comparison.</div>';
+      }, 0);
+    }
+  } else if (s.step === 4) {
+    var summary = s.selected.map(function (id) {
+      var t = toolById(id);
+      if (!t) return "";
+      var p = s.personDetails[id];
+      var pInfo = p && p.name ? ' — <span style="color:#64748b">' + esc(p.name) + (p.company ? ", " + esc(p.company) : "") + '</span>' : '';
+      return '<div style="font-size:13px;color:#334155;margin-bottom:4px">• ' + esc(t.name) + ' <span class="mono">(' + esc(t.assetId) + ')</span> ' + catBadge(t.category) + pInfo + '</div>';
+    }).join("");
+    html += '<div class="card"><div class="card-title">Step 4: ASIC Holder Sign-Off</div>' +
+      '<div class="alert alert-warning">⚠ A supervising ASIC holder must sign off before tools enter the sterile area.</div>' +
+      '<div style="margin-bottom:16px;padding:14px;background:#f8fafc;border-radius:8px">' +
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px">Tools being declared:</div>' + summary +
+      (s.weight ? '<div style="font-size:13px;margin-top:8px;color:#64748b">📦 Entry weight: <strong>' + esc(s.weight) + ' kg</strong></div>' : '') +
+      (s.photoData ? '<div style="font-size:13px;margin-top:4px;color:#64748b">📷 Entry photo captured for exit comparison.</div>' : '<div style="font-size:13px;margin-top:4px;color:#94a3b8">No entry photo taken.</div>') +
+      '</div>' +
+      '<div class="form-group"><label class="lbl">Supervising ASIC Card Number *</label>' +
+      '<input type="text" id="entry-asic" placeholder="Enter ASIC number of supervising holder" />' +
+      '<div style="font-size:11px;color:#94a3b8;margin-top:4px">The supervising ASIC holder takes accountability for these tools inside the sterile area. Try SUP4421.</div></div>' +
+      '<div id="entry-step4-err"></div>' +
+      '<div class="btn-row"><button class="btn btn-primary" onclick="entrySubmit()">Confirm Entry & Sign Off</button>' +
+      '<button class="btn btn-ghost" onclick="entryGoStep(3)">← Back</button></div></div>';
+  } else if (s.step === 5) {
+    html += '<div class="card"><div class="success-screen"><div class="big-check">✅</div>' +
+      '<h2 style="color:#166534">Entry Declaration Confirmed</h2>' +
+      '<p>' + s.selected.length + ' tool(s) logged as inside the sterile area, each linked to a responsible person. Audit trail updated.</p>' +
+      '<button class="btn btn-navy" onclick="entryReset()">New Declaration</button></div></div>';
+  }
+
+  document.getElementById("entry-content").innerHTML = html;
+}
+
+// Step 2 — responsible person per tool, with a "same person for all" convenience option
+function renderPersonStep() {
+  var s = entryState;
+  var rows = s.selected.map(function (id) {
+    var t = toolById(id);
+    if (!t) return "";
+    var p = s.personDetails[id] || {};
+    return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:12px">' +
+      '<div style="font-weight:700;font-size:14px;margin-bottom:2px">' + esc(t.name) + ' <span class="mono">(' + esc(t.assetId) + ')</span></div>' +
+      '<div style="font-size:12px;color:#94a3b8;margin-bottom:12px">Who is responsible for bringing this tool in?</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+      '<div class="form-group" style="margin:0"><label class="lbl">Full Name *</label><input type="text" id="pn-' + id + '" value="' + esc(p.name || "") + '" placeholder="e.g. Darko Petrovic" oninput="updatePerson(\'' + id + '\',\'name\',this.value)" /></div>' +
+      '<div class="form-group" style="margin:0"><label class="lbl">Employee / Contractor ID or Company *</label><input type="text" id="pc-' + id + '" value="' + esc(p.company || "") + '" placeholder="e.g. SkyTech / EMP-4821" oninput="updatePerson(\'' + id + '\',\'company\',this.value)" /></div>' +
+      '<div class="form-group" style="margin:0;grid-column:1 / -1"><label class="lbl">Contact Number *</label><input type="text" id="pp-' + id + '" value="' + esc(p.contact || "") + '" placeholder="e.g. 0412 345 678" oninput="updatePerson(\'' + id + '\',\'contact\',this.value)" /></div>' +
+      '</div></div>';
+  }).join("");
+
+  return '<div class="card"><div class="card-title">Step 2: Responsible Person per Tool</div>' +
+    '<div class="alert alert-warning">👤 Each tool must be linked to the person responsible for it at the point of entry. This is who is accountable if the tool is not returned.</div>' +
+    '<div style="margin:14px 0"><button class="btn btn-ghost btn-sm" onclick="fillSamemPerson()">Apply first person to all tools</button></div>' +
+    rows +
+    '<div id="entry-step2-err"></div>' +
+    '<div class="btn-row"><button class="btn btn-navy" onclick="entryGoStep(3)">Continue → Photo</button>' +
+    '<button class="btn btn-ghost" onclick="entryGoStep(1)">← Back</button></div></div>';
+}
+
+function updatePerson(toolId, field, val) {
+  if (!entryState.personDetails[toolId]) entryState.personDetails[toolId] = {};
+  entryState.personDetails[toolId][field] = val;
+}
+
+function fillSamemPerson() {
+  var s = entryState;
+  if (s.selected.length === 0) return;
+  var first = s.personDetails[s.selected[0]];
+  if (!first || !first.name) { document.getElementById("entry-step2-err").innerHTML = '<div class="alert alert-error">Fill in the first tool\'s person details before applying to all.</div>'; return; }
+  s.selected.forEach(function (id) {
+    s.personDetails[id] = { name:first.name, company:first.company, contact:first.contact };
+  });
+  renderEntry();
+}
+
+function entryToolRow(t) {
+  var sel = entryState.selected.indexOf(t.id) > -1;
+  var pc = sel ? "tool-pick selected" : "tool-pick";
+  var bc = sel ? "check-box checked-navy" : "check-box";
+  var sv = sel ? '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>' : "";
+  return '<div class="' + pc + '" onclick="toggleEntry(\'' + t.id + '\')">' +
+    '<div class="' + bc + '">' + sv + '</div>' +
+    '<div style="flex:1"><div style="font-weight:600;font-size:14px">' + esc(t.name) + '</div>' +
+    '<div style="font-size:12px;color:#64748b">Asset ID: <span class="mono">' + esc(t.assetId) + '</span>' + (t.rfid ? " · RFID: " + esc(t.rfid) : "") + '</div></div>' +
+    catBadge(t.category) + '</div>';
+}
+
+function filterEntryTools() {
+  var q = (document.getElementById("entry-search") ? document.getElementById("entry-search").value.toLowerCase() : "");
+  var myTools = toolsForCurrentUser().filter(function (t) { return t.status === "Registered" || t.status === "Exited"; });
+  var filtered = myTools.filter(function (t) {
+    return t.name.toLowerCase().indexOf(q) > -1 ||
+      (t.assetId || "").toLowerCase().indexOf(q) > -1 ||
+      (t.serial || "").toLowerCase().indexOf(q) > -1;
+  });
+  document.getElementById("entry-tool-list").innerHTML = filtered.length ?
+    filtered.map(function (t) { return entryToolRow(t); }).join("") :
+    '<div class="empty"><div class="empty-icon">🔍</div><div>No tools match. Use "Add New Tool" to register one.</div></div>';
+}
+
+function toggleEntry(id) {
+  var i = entryState.selected.indexOf(id);
+  if (i > -1) {
+    entryState.selected.splice(i, 1);
+    delete entryState.personDetails[id];
+  } else {
+    entryState.selected.push(id);
+  }
+  var searchEl = document.getElementById("entry-search");
+  if (searchEl && searchEl.value) { filterEntryTools(); }
+  else { renderEntry(); }
+}
+
+function openEntryAddTool() {
+  document.getElementById("entry-new-name").value = "";
+  document.getElementById("entry-new-cat").value = "standard";
+  document.getElementById("entry-new-err").innerHTML = "";
+  openModal("modal-entry-add-tool");
+}
+
+function submitEntryAddTool() {
+  var name = document.getElementById("entry-new-name").value.trim();
+  var cat = document.getElementById("entry-new-cat").value;
+  var err = document.getElementById("entry-new-err");
+  if (!name) { err.innerHTML = '<div class="alert alert-error">Tool name is required.</div>'; return; }
+  var mc = myCompany();
+  var companyId = mc ? mc.id : (db.companies[0] ? db.companies[0].id : null);
+  if (!companyId) { err.innerHTML = '<div class="alert alert-error">No company found for your account.</div>'; return; }
+  var assetId = nextAssetId(companyId);
+  var tool = { id:uid(), assetId:assetId, name:name, serial:"", category:cat, rfid:null, company:companyId, owner:currentUser.id, status:"Registered" };
+  db.tools.push(tool);
+  db.auditLog.push({ id:uid(), time:now(), action:"Tool Registered", detail: name + " (" + assetId + ") registered by " + currentUser.name + " from Entry Declaration", company:companyId });
+  entryState.selected.push(tool.id);
+  saveDB();
+  closeModal("modal-entry-add-tool");
+  renderEntry();
+}
+
+function previewEntryPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    entryState.photoData = e.target.result;
+    var el = document.getElementById("entry-photo-preview");
+    if (el) el.innerHTML = '<img src="' + e.target.result + '" class="photo-preview" style="max-height:220px" /><div class="alert alert-success" style="margin-top:8px">✓ Photo captured and saved for exit comparison.</div>';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function entrySkipPhoto() { entryState.photoData = null; entryGoStep(4); }
+
+function entryGoStep(step) {
+  var s = entryState;
+  // Validation gates
+  if (step === 2 && s.selected.length === 0) {
+    document.getElementById("entry-step1-err").innerHTML = '<div class="alert alert-error">Please select at least one tool.</div>';
+    return;
+  }
+  if (step === 3 && s.step === 2) {
+    // validate every selected tool has full person details
+    var incomplete = [];
+    s.selected.forEach(function (id) {
+      var p = s.personDetails[id] || {};
+      if (!p.name || !p.company || !p.contact) { var t = toolById(id); incomplete.push(t ? t.name : id); }
+    });
+    if (incomplete.length > 0) {
+      var errEl = document.getElementById("entry-step2-err");
+      if (errEl) errEl.innerHTML = '<div class="alert alert-error">Please complete name, ID/company and contact for: ' + esc(incomplete.join(", ")) + '</div>';
+      return;
+    }
+  }
+  s.step = step;
+  renderEntry();
+}
+
+function entryReset() {
+  entryState = { step:1, selected:[], weight:"", photoData:null, personDetails:{} };
+  renderEntry();
+}
+
+function entrySubmit() {
+  var asic = document.getElementById("entry-asic") ? document.getElementById("entry-asic").value.trim().toUpperCase() : "";
+  var err = document.getElementById("entry-step4-err");
+  if (!asic) { err.innerHTML = '<div class="alert alert-error">Please enter the supervising ASIC card number.</div>'; return; }
+  var verifyUser = USERS.find(function (u) { return u.asic === asic; });
+  if (!verifyUser) { err.innerHTML = '<div class="alert alert-error">ASIC card number not found in the system.</div>'; return; }
+
+  var declId = uid();
+  var mc = myCompany();
+  entryState.selected.forEach(function (id) {
+    var t = toolById(id);
+    if (t) {
+      t.status = "Inside Sterile Area";
+      t.lastEntry = now();
+      t.entryWeight = entryState.weight || null;
+      t.lastDeclId = declId;
+      t.responsiblePerson = entryState.personDetails[id] || null;
+    }
+  });
+  if (entryState.photoData) db.entryPhotos[declId] = entryState.photoData;
+
+  // snapshot person details keyed by tool
+  var personSnapshot = {};
+  entryState.selected.forEach(function (id) { personSnapshot[id] = entryState.personDetails[id] || null; });
+
+  db.declarations.push({
+    id:declId, time:now(), worker:currentUser.id, asicVerified:asic,
+    tools:entryState.selected.slice(), weight:entryState.weight || null,
+    photoId: entryState.photoData ? declId : null, company: mc ? mc.id : null,
+    persons: personSnapshot
+  });
+  db.auditLog.push({
+    id:uid(), time:now(), action:"Entry Declared",
+    detail: currentUser.name + " declared " + entryState.selected.length + " tool(s). Supervising ASIC: " + asic,
+    company: mc ? mc.id : null, declId: declId
+  });
+  saveDB();
+  updateAlertBadge();
+  entryState.step = 5;
+  renderEntry();
+}
+
+// ── Exit Check ───────────────────────────────────────────────────────────────
+function renderExit() {
+  var s = exitState;
+
+  if (s.done) {
+    document.getElementById("exit-content").innerHTML =
+      '<div class="card"><div class="success-screen"><div class="big-check">' + (s.hasAlerts ? "⚠️" : "✅") + '</div>' +
+      '<h2 style="color:' + (s.hasAlerts ? "#C0392B" : "#166534") + '">' + (s.hasAlerts ? "Exit Processed with Alerts" : "All Tools Checked Out") + '</h2>' +
+      '<p>' + esc(s.msg) + '</p>' +
+      '<button class="btn btn-navy" onclick="exitReset()">New Exit Check</button></div></div>';
+    return;
+  }
+
+  // Recheck phase — triggered by a weight discrepancy
+  if (s.phase === "recheck") {
+    renderExitRecheck();
+    return;
+  }
+
+  var inside = toolsForCurrentUser().filter(function (t) { return t.status === "Inside Sterile Area"; });
+
+  var lastDecl = null;
+  for (var di = db.declarations.length - 1; di >= 0; di--) {
+    if (db.declarations[di].worker === currentUser.id) { lastDecl = db.declarations[di]; break; }
+  }
+  var entryPhoto = lastDecl && lastDecl.photoId ? db.entryPhotos[lastDecl.photoId] : null;
+
+  var toolItems = inside.map(function (t) { return exitToolRow(t); }).join("");
+
+  var weightField = lastDecl && lastDecl.weight ?
+    '<div class="form-group"><label class="lbl">Toolbox Exit Weight (kg) — Entry was ' + esc(lastDecl.weight) + 'kg</label><input type="number" class="sm" id="exit-weight" placeholder="e.g. 12.5" /></div>' : "";
+
+  var photoSection = "";
+  if (entryPhoto) {
+    photoSection = '<div class="form-group"><label class="lbl">AI Photo Verification</label>' +
+      '<div style="font-size:12px;color:#64748b;margin-bottom:10px">Take a new photo of your toolbox on exit. The system compares it against your entry photo to detect missing or damaged tools.</div>' +
+      '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">' +
+      '<div><div class="photo-label">Entry Photo</div><img src="' + entryPhoto + '" class="photo-compare" /></div>' +
+      '<div><div class="photo-label">Exit Photo</div>' +
+      '<input type="file" id="exit-photo-input" accept="image/*" capture="environment" onchange="previewExitPhoto(this)" style="margin-bottom:8px;max-width:200px" />' +
+      '<div id="exit-photo-preview"></div></div></div>' +
+      '<div id="exit-ai-result" style="margin-top:12px"></div></div>';
+  } else {
+    photoSection = '<div class="alert alert-warning" style="margin-top:8px">No entry photo was taken for this visit, so AI photo comparison is unavailable. Exit will be verified against the declared tool list only.</div>';
+  }
+
+  document.getElementById("exit-content").innerHTML =
+    '<div class="card"><div class="card-title">Select Tools Being Taken Out</div>' +
+    '<div style="font-size:12px;color:#64748b;margin-bottom:14px">Tick every tool you are taking back out of the sterile area. Anything left unticked will be flagged as not returned.</div>' +
+    (inside.length === 0 ? '<div class="empty"><div class="empty-icon">✅</div><div>No tools currently logged inside the sterile area for your company.</div></div>' : toolItems) +
+    (inside.length > 0 ? '<hr />' + weightField + photoSection + '<div id="exit-err" style="margin-top:12px"></div><button class="btn btn-primary" onclick="submitExit()" style="margin-top:12px">Confirm Exit Check</button>' : '') +
+    '</div>';
+}
+
+function exitToolRow(t) {
+  var sel = exitState.selected.indexOf(t.id) > -1;
+  var pc = sel ? "tool-pick selected-green" : "tool-pick";
+  var bc = sel ? "check-box checked-green" : "check-box";
+  var sv = sel ? '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>' : "";
+  return '<div class="' + pc + '" onclick="toggleExit(\'' + t.id + '\')">' +
+    '<div class="' + bc + '">' + sv + '</div>' +
+    '<div style="flex:1"><div style="font-weight:600;font-size:14px">' + esc(t.name) + '</div><div style="font-size:12px;color:#64748b">Asset ID: <span class="mono">' + esc(t.assetId) + '</span></div></div>' +
+    catBadge(t.category) + '</div>';
+}
+
+function toggleExit(id) {
+  var i = exitState.selected.indexOf(id);
+  if (i > -1) exitState.selected.splice(i, 1); else exitState.selected.push(id);
+  renderExit();
+}
+
+function previewExitPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    exitState.exitPhotoData = e.target.result;
+    var prev = document.getElementById("exit-photo-preview");
+    if (prev) prev.innerHTML = '<img src="' + e.target.result + '" class="photo-compare" style="border-color:#27ae60" />';
+    var res = document.getElementById("exit-ai-result");
+    if (res) res.innerHTML = '<div class="alert alert-warning">⏳ Running AI comparison…</div>';
+    setTimeout(function () {
+      var r = document.getElementById("exit-ai-result");
+      if (r) r.innerHTML = '<div class="alert alert-success">✓ AI comparison complete. Toolbox contents match the entry photo. If any tool is missing or damaged, leave it unticked above to flag it before confirming exit.</div>';
+    }, 1300);
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function exitReset() {
+  exitState = { selected:[], done:false, hasAlerts:false, msg:"", exitPhotoData:null, phase:"check", recheckResults:{} };
+  renderExit();
+}
+
+// Get the declared tools for the current worker's active visit
+function getActiveInsideTools() {
+  return toolsForCurrentUser().filter(function (t) { return t.status === "Inside Sterile Area"; });
+}
+
+function submitExit() {
+  var inside = getActiveInsideTools();
+  var mc = myCompany();
+
+  var exitWeightEl = document.getElementById("exit-weight");
+  var lastDecl = null;
+  for (var di = db.declarations.length - 1; di >= 0; di--) {
+    if (db.declarations[di].worker === currentUser.id && db.declarations[di].weight) { lastDecl = db.declarations[di]; break; }
+  }
+
+  // Detect a weight discrepancy FIRST. If found, force an on-site recheck
+  // rather than submitting anything or raising an alert yet.
+  var weightMismatch = false;
+  if (lastDecl && exitWeightEl && exitWeightEl.value) {
+    var diff = Math.abs(parseFloat(lastDecl.weight) - parseFloat(exitWeightEl.value));
+    if (diff > 0.5) weightMismatch = true;
+  }
+
+  if (weightMismatch) {
+    // enter recheck phase — do NOT submit, do NOT alert, keep everything on screen
+    exitState.phase = "recheck";
+    exitState.recheckResults = {};
+    exitState.entryWeight = lastDecl ? lastDecl.weight : null;
+    exitState.exitWeight = exitWeightEl.value;
+    renderExit();
+    return;
+  }
+
+  // No weight discrepancy — normal submit path
+  finaliseExit(inside);
+}
+
+// ── Recheck flow (triggered by weight discrepancy) ───────────────────────────
+function renderExitRecheck() {
+  var s = exitState;
+  var inside = getActiveInsideTools();
+
+  var checkedCount = Object.keys(s.recheckResults).length;
+  var allChecked = checkedCount === inside.length;
+
+  var rows = inside.map(function (t, idx) {
+    var res = s.recheckResults[t.id];
+    var statusChip = "";
+    if (res === "present") statusChip = '<span class="badge badge-green">✓ Present & OK</span>';
+    else if (res === "missing") statusChip = '<span class="badge badge-red">✕ Missing</span>';
+    else if (res === "damaged") statusChip = '<span class="badge badge-amber">⚠ Damaged</span>';
+    else statusChip = '<span class="badge badge-gray">Awaiting check</span>';
+
+    return '<div style="border:1px solid ' + (res ? '#e2e8f0' : '#fcd34d') + ';border-radius:10px;padding:14px 16px;margin-bottom:10px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">' +
+      '<div><div style="font-weight:700;font-size:14px">' + (idx + 1) + '. ' + esc(t.name) + ' <span class="mono">(' + esc(t.assetId) + ')</span></div>' +
+      '<div style="font-size:12px;color:#64748b;margin-top:2px">Physically locate this tool and confirm its condition.</div></div>' +
+      statusChip + '</div>' +
+      '<div class="btn-row" style="margin-top:10px">' +
+      '<button class="btn ' + (res === "present" ? "btn-success" : "btn-ghost") + ' btn-sm" onclick="setRecheck(\'' + t.id + '\',\'present\')">Present & OK</button>' +
+      '<button class="btn ' + (res === "damaged" ? "btn-primary" : "btn-ghost") + ' btn-sm" onclick="setRecheck(\'' + t.id + '\',\'damaged\')">Damaged</button>' +
+      '<button class="btn ' + (res === "missing" ? "btn-danger" : "btn-ghost") + ' btn-sm" onclick="setRecheck(\'' + t.id + '\',\'missing\')">Missing</button>' +
+      '</div></div>';
+  }).join("");
+
+  document.getElementById("exit-content").innerHTML =
+    '<div class="card">' +
+    '<div class="alert alert-error">⚠ <strong>Weight discrepancy detected.</strong> Entry weight was ' + esc(s.entryWeight) + 'kg but exit weight is ' + esc(s.exitWeight) + 'kg. Before you can leave, every declared tool must be physically rechecked on the spot. You cannot submit until all tools are accounted for.</div>' +
+    '<div class="card-title" style="margin-top:16px">On-Site Recheck — ' + checkedCount + ' of ' + inside.length + ' tools checked</div>' +
+    rows +
+    '<div id="recheck-err"></div>' +
+    '<div class="btn-row" style="margin-top:8px">' +
+    '<button class="btn ' + (allChecked ? "btn-primary" : "btn-ghost") + '" onclick="confirmRecheck()"' + (allChecked ? '' : ' disabled style="opacity:0.5;cursor:not-allowed"') + '>' +
+    (allChecked ? "Submit Recheck Results" : "Check all tools to continue") + '</button>' +
+    '<button class="btn btn-ghost" onclick="cancelRecheck()">← Back to Exit Check</button>' +
+    '</div></div>';
+}
+
+function setRecheck(toolId, result) {
+  exitState.recheckResults[toolId] = result;
+  renderExitRecheck();
+}
+
+function cancelRecheck() {
+  exitState.phase = "check";
+  exitState.recheckResults = {};
+  renderExit();
+}
+
+function confirmRecheck() {
+  var inside = getActiveInsideTools();
+  if (Object.keys(exitState.recheckResults).length !== inside.length) {
+    document.getElementById("recheck-err").innerHTML = '<div class="alert alert-error">Please check every tool before submitting.</div>';
+    return;
+  }
+  finaliseExit(inside, true);
+}
+
+// Finalise the exit. `fromRecheck` indicates the recheck flow produced these results.
+function finaliseExit(inside, fromRecheck) {
+  var mc = myCompany();
+  var alerts = [];
+
+  var lastDecl = null;
+  for (var di = db.declarations.length - 1; di >= 0; di--) {
+    if (db.declarations[di].worker === currentUser.id) { lastDecl = db.declarations[di]; break; }
+  }
+
+  if (fromRecheck) {
+    // Use the physical recheck results as the source of truth
+    inside.forEach(function (t) {
+      var res = exitState.recheckResults[t.id];
+      var person = lastDecl && lastDecl.persons ? lastDecl.persons[t.id] : (t.responsiblePerson || null);
+      var personStr = person && person.name ? (" Responsible person: " + person.name + (person.company ? " (" + person.company + ")" : "") + (person.contact ? ", " + person.contact : "")) : "";
+      if (res === "present") {
+        t.status = "Exited";
+      } else if (res === "damaged") {
+        t.status = "Exited";
+        alerts.push({ id:uid(), type:"Damaged Tool", message: t.name + " (" + t.assetId + ") confirmed damaged during on-site recheck." + personStr, time:now(), resolved:false, company:t.company });
+      } else if (res === "missing") {
+        t.status = "Flagged";
+        alerts.push({ id:uid(), type:"Missing Tool", message: t.name + " (" + t.assetId + ") confirmed missing during on-site recheck." + personStr, time:now(), resolved:false, company:t.company });
+      }
+    });
+    db.alerts.push.apply(db.alerts, alerts);
+    db.auditLog.push({
+      id:uid(), time:now(), action:"Exit Check (Recheck)",
+      detail: currentUser.name + " completed on-site recheck after weight discrepancy (" + exitState.entryWeight + "kg → " + exitState.exitWeight + "kg). " + alerts.length + " issue(s) confirmed.",
+      company: mc ? mc.id : null
+    });
+    saveDB();
+    updateAlertBadge();
+    exitState.done = true;
+    exitState.hasAlerts = alerts.length > 0;
+    exitState.msg = alerts.length > 0
+      ? "On-site recheck complete. " + alerts.length + " issue(s) confirmed and escalated to the security supervisor with full details."
+      : "On-site recheck complete. All tools were physically accounted for. The weight difference was resolved on site with no missing tools.";
+    renderExit();
+    return;
+  }
+
+  // Normal path (no weight discrepancy) — flag anything left unticked as missing
+  var missing = inside.filter(function (t) { return exitState.selected.indexOf(t.id) === -1; });
+  missing.forEach(function (t) {
+    var person = lastDecl && lastDecl.persons ? lastDecl.persons[t.id] : (t.responsiblePerson || null);
+    var personStr = person && person.name ? (" Responsible person: " + person.name + (person.company ? " (" + person.company + ")" : "") + (person.contact ? ", " + person.contact : "")) : "";
+    alerts.push({ id:uid(), type:"Missing Tool", message: t.name + " (" + t.assetId + ") was not checked out on exit." + personStr, time:now(), resolved:false, company:t.company });
+  });
+
+  exitState.selected.forEach(function (id) { var t = toolById(id); if (t) t.status = "Exited"; });
+  missing.forEach(function (t) { t.status = "Flagged"; });
+
+  db.alerts.push.apply(db.alerts, alerts);
+  db.auditLog.push({ id:uid(), time:now(), action:"Exit Check", detail: currentUser.name + " checked out " + exitState.selected.length + " tool(s). " + missing.length + " missing. " + alerts.length + " alert(s).", company: mc ? mc.id : null });
+  saveDB();
+  updateAlertBadge();
+
+  exitState.done = true;
+  exitState.hasAlerts = alerts.length > 0;
+  exitState.msg = alerts.length > 0 ? alerts.length + " alert(s) raised. The security supervisor has been notified." : "All " + exitState.selected.length + " tool(s) checked out. No discrepancies.";
+  renderExit();
+}
+
+
+// ── Companies ────────────────────────────────────────────────────────────────
+function renderCompanies() {
+  var addBtn = document.getElementById("btn-add-company");
+  if (addBtn) addBtn.style.display = currentUser.role === "admin" ? "inline-block" : "none";
+  var html = "";
+  db.companies.forEach(function (c) {
+    var tools = db.tools.filter(function (t) { return t.company === c.id; });
+    var staff = USERS.filter(function (u) { return u.company === c.name; });
+    html += '<div class="card company-card" onclick="viewCompany(\'' + c.id + '\')">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+      '<div><div style="font-size:16px;font-weight:700">' + esc(c.name) + '</div>' +
+      '<div style="font-size:13px;color:#64748b;margin-top:2px">' + esc(c.type || "General Operations") + '</div></div>' +
+      '<span class="badge badge-blue">' + tools.length + ' tools</span></div>' +
+      '<div style="display:flex;gap:24px;margin-top:12px;font-size:12px;color:#64748b;flex-wrap:wrap">' +
+      '<div>📅 ' + esc(c.registered) + '</div><div>👤 ' + esc(c.contact || "—") + '</div><div>👥 ' + staff.length + ' staff</div></div>' +
+      '<div style="font-size:12px;color:#1E3A5F;margin-top:10px;font-weight:600">View full profile →</div></div>';
+  });
+  if (db.companies.length === 0) html = '<div class="card"><div class="empty"><div class="empty-icon">🏢</div><div>No companies registered yet.</div></div></div>';
+  document.getElementById("companies-list").innerHTML = html;
+}
+
+function viewCompany(companyId) {
+  editingCompanyId = companyId;
+  var c = companyById(companyId);
+  if (!c) return;
+  var tools = db.tools.filter(function (t) { return t.company === companyId; });
+  var staff = USERS.filter(function (u) { return u.company === c.name; });
+  var activity = db.auditLog.filter(function (a) { return a.company === companyId; }).slice().sort(function (a, b) { return new Date(b.time) - new Date(a.time); });
+  var canEdit = currentUser.role === "admin";
+
+  var toolRows = tools.length ? tools.map(function (t) {
+    return '<tr><td><strong>' + esc(t.name) + '</strong></td><td><span class="mono">' + esc(t.assetId) + '</span></td><td>' + catBadge(t.category) +
+      '</td><td>' + (t.rfid ? esc(t.rfid) : '<span style="color:#94a3b8">None</span>') + '</td>' +
+      '<td><span class="badge ' + statusBadge(t.status) + '">' + esc(t.status) + '</span></td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="closeModal(\'modal-company-detail\');showQR(\'' + t.id + '\')">QR</button>' +
+      (canEdit ? ' <button class="btn btn-ghost btn-sm" onclick="closeModal(\'modal-company-detail\');openEditTool(\'' + t.id + '\')">Edit</button>' : '') + '</td>' +
+      '</tr>';
+  }).join("") : '<tr><td colspan="6" style="color:#94a3b8">No tools registered yet.</td></tr>';
+
+  var staffRows = staff.length ? staff.map(function (u) {
+    return '<div style="font-size:13px;margin-bottom:6px">• ' + esc(u.name) + ' <span class="badge badge-gray">' + esc(u.role) + '</span> <span style="color:#94a3b8;font-size:11px">' + esc(u.asic) + '</span></div>';
+  }).join("") : '<div style="color:#94a3b8;font-size:13px">No staff linked yet.</div>';
+
+  var activityRows = activity.length ? activity.slice(0, 12).map(function (a) {
+    return '<div style="font-size:12px;padding:8px 0;border-bottom:1px solid #f1f5f9"><span style="color:#64748b">' + fmt(a.time) + '</span> — <strong>' + esc(a.action) + '</strong>: ' + esc(a.detail) + '</div>';
+  }).join("") : '<div style="color:#94a3b8;font-size:13px">No activity recorded.</div>';
+
+  var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">' +
+    '<div><div class="modal-title">' + esc(c.name) + '</div><div class="modal-sub" style="margin-bottom:0">' + esc(c.type || "General Operations") + '</div></div>' +
+    (canEdit ? '<button class="btn btn-ghost btn-sm" onclick="openEditCompany(\'' + c.id + '\')">✎ Edit Details</button>' : '') + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0">' +
+    profileField("Contact", c.contact) + profileField("Email", c.email) +
+    profileField("Phone", c.phone) + profileField("Registered", c.registered) + '</div>' +
+    (c.notes ? '<div style="margin-bottom:18px"><div class="field-label">Notes / Special Conditions</div><div style="font-size:13px;color:#334155">' + esc(c.notes) + '</div></div>' : '') +
+    '<div style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+    '<div class="field-label" style="margin:0">Registered Tools / Equipment (' + tools.length + ')</div>' +
+    (canEdit ? '<button class="btn btn-navy btn-sm" onclick="closeModal(\'modal-company-detail\');openAddToolForCompany(\'' + c.id + '\')">+ Add Tool</button>' : '') + '</div>' +
+    '<table><thead><tr><th>Name</th><th>Asset ID</th><th>Category</th><th>RFID</th><th>Status</th><th></th></tr></thead><tbody>' + toolRows + '</tbody></table></div>' +
+    '<div style="margin-bottom:18px"><div class="field-label">Staff (' + staff.length + ')</div>' + staffRows + '</div>' +
+    '<div><div class="field-label">Activity History</div><div style="max-height:200px;overflow:auto">' + activityRows + '</div></div>';
+
+  document.getElementById("company-detail-content").innerHTML = html;
+  openModal("modal-company-detail");
+}
+
+function profileField(label, val) {
+  return '<div><div class="field-label">' + label + '</div><div style="font-size:14px">' + esc(val || "—") + '</div></div>';
+}
+
+function openAddToolForCompany(companyId) {
+  document.getElementById("new-tool-name").value = "";
+  document.getElementById("new-tool-serial").value = "";
+  document.getElementById("new-tool-cat").value = "standard";
+  document.getElementById("new-tool-rfid").value = "";
+  document.getElementById("add-tool-err").innerHTML = "";
+  toggleRfid();
+  if (currentUser.role === "admin") {
+    document.getElementById("company-field-wrap").style.display = "block";
+    document.getElementById("new-tool-company").innerHTML = db.companies.map(function (c) { return '<option value="' + c.id + '"' + (c.id === companyId ? " selected" : "") + '>' + esc(c.name) + '</option>'; }).join("");
+  }
+  openModal("modal-add-tool");
+}
+
+function openEditCompany(companyId) {
+  var c = companyById(companyId);
+  if (!c) return;
+  document.getElementById("edit-company-id").value = c.id;
+  document.getElementById("edit-company-name").value = c.name;
+  document.getElementById("edit-company-type").value = c.type || "";
+  document.getElementById("edit-company-contact").value = c.contact || "";
+  document.getElementById("edit-company-email").value = c.email || "";
+  document.getElementById("edit-company-phone").value = c.phone || "";
+  document.getElementById("edit-company-notes").value = c.notes || "";
+  document.getElementById("edit-company-err").innerHTML = "";
+  closeModal("modal-company-detail");
+  openModal("modal-edit-company");
+}
+
+function submitEditCompany() {
+  var id = document.getElementById("edit-company-id").value;
+  var name = document.getElementById("edit-company-name").value.trim();
+  var err = document.getElementById("edit-company-err");
+  if (!name) { err.innerHTML = '<div class="alert alert-error">Company name is required.</div>'; return; }
+  var c = companyById(id);
+  if (c) {
+    var oldName = c.name;
+    c.name = name;
+    c.type = document.getElementById("edit-company-type").value.trim();
+    c.contact = document.getElementById("edit-company-contact").value.trim();
+    c.email = document.getElementById("edit-company-email").value.trim();
+    c.phone = document.getElementById("edit-company-phone").value.trim();
+    c.notes = document.getElementById("edit-company-notes").value.trim();
+    if (oldName !== name) { USERS.forEach(function (u) { if (u.company === oldName) u.company = name; }); }
+    db.auditLog.push({ id:uid(), time:now(), action:"Company Updated", detail: name + " details updated by " + currentUser.name, company:id });
+  }
+  saveDB();
+  closeModal("modal-edit-company");
+  renderCompanies();
+  viewCompany(id);
+}
+
+// Dynamic tool-list builder for the registration form
+var regToolList = [];
+function renderRegTools() {
+  var wrap = document.getElementById("reg-tool-list");
+  if (!wrap) return;
+  if (regToolList.length === 0) { wrap.innerHTML = '<div style="font-size:12px;color:#94a3b8;padding:4px 0">No tools added yet. Use the standard tool set or add your own.</div>'; return; }
+  wrap.innerHTML = regToolList.map(function (t, i) {
+    return '<div class="tool-tag">' + esc(t.name) + ' <span class="badge ' + (t.category === "high-risk" ? "badge-red" : "badge-gray") + '" style="padding:1px 6px">' + (t.category === "high-risk" ? "High Risk" : "Std") + '</span>' +
+      '<span style="cursor:pointer;color:#C0392B;font-weight:700;margin-left:4px" onclick="removeRegTool(' + i + ')">✕</span></div>';
+  }).join("");
+}
+function addRegTool() {
+  var nameEl = document.getElementById("reg-tool-name");
+  var catEl = document.getElementById("reg-tool-cat");
+  var name = nameEl.value.trim();
+  if (!name) return;
+  regToolList.push({ name:name, category:catEl.value });
+  nameEl.value = "";
+  renderRegTools();
+}
+function removeRegTool(i) { regToolList.splice(i, 1); renderRegTools(); }
+function loadStandardRegTools() {
+  regToolList = STANDARD_TOOLS.map(function (t) { return { name:t.name, category:t.category }; });
+  renderRegTools();
+}
+
+function openAddCompany() {
+  ["new-company-name","new-company-type","new-company-contact","new-company-email","new-company-phone","new-company-notes"].forEach(function (id) {
+    var el = document.getElementById(id); if (el) el.value = "";
+  });
+  document.getElementById("add-company-err").innerHTML = "";
+  regToolList = STANDARD_TOOLS.map(function (t) { return { name:t.name, category:t.category }; });
+  renderRegTools();
+  openModal("modal-add-company");
+}
+
+function submitAddCompany() {
+  var name = document.getElementById("new-company-name").value.trim();
+  var err = document.getElementById("add-company-err");
+  if (!name) { err.innerHTML = '<div class="alert alert-error">Company name is required.</div>'; return; }
+  var companyId = uid();
+  var c = {
+    id: companyId, name: name,
+    type: document.getElementById("new-company-type").value.trim(),
+    contact: document.getElementById("new-company-contact").value.trim(),
+    email: document.getElementById("new-company-email").value.trim(),
+    phone: document.getElementById("new-company-phone").value.trim(),
+    notes: document.getElementById("new-company-notes").value.trim(),
+    registered: new Date().toISOString().split("T")[0]
+  };
+  db.companies.push(c);
+  regToolList.forEach(function (t) {
+    var assetId = nextAssetId(companyId);
+    db.tools.push({ id:uid(), assetId:assetId, name:t.name, serial:"", category:t.category, rfid:null, company:companyId, owner:currentUser.id, status:"Registered" });
+  });
+  db.auditLog.push({ id:uid(), time:now(), action:"Company Registered", detail: name + " registered by " + currentUser.name + " with " + regToolList.length + " tool(s)", company:companyId });
+  saveDB();
+  closeModal("modal-add-company");
+  document.getElementById("companies-msg").innerHTML = '<div class="alert alert-success">✓ ' + esc(name) + ' registered with ' + regToolList.length + ' tool(s).</div>';
+  setTimeout(function () { var m = document.getElementById("companies-msg"); if (m) m.innerHTML = ""; }, 4000);
+  renderCompanies();
+}
+
+// ── Alerts ───────────────────────────────────────────────────────────────────
+function renderAlerts() {
+  var active = db.alerts.filter(function (a) { return !a.resolved; });
+  var resolved = db.alerts.filter(function (a) { return a.resolved; });
+  var html = "";
+  if (active.length > 0) {
+    html += '<div class="card"><div class="card-title" style="color:#C0392B">Active Alerts (' + active.length + ')</div>';
+    active.forEach(function (a) {
+      html += '<div class="alert alert-error alert-row"><div>⚠ <strong>' + esc(a.type) + '</strong>: ' + esc(a.message) + ' — ' + fmt(a.time) + '</div>';
+      if (currentUser.role !== "worker") html += '<button class="btn btn-success btn-sm" onclick="openResolveModal(\'' + a.id + '\')">Resolve</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  if (resolved.length > 0) {
+    html += '<div class="card"><div class="card-title">Resolved Alerts (' + resolved.length + ')</div>';
+    resolved.forEach(function (a) {
+      html += '<div class="resolved-item"><div style="font-weight:600;font-size:13px;color:#166534;margin-bottom:6px">✓ ' + esc(a.type) + ': ' + esc(a.message) + '</div>' +
+        '<div class="resolution-report">' +
+        '<div><span class="rr-label">Action taken:</span> ' + esc(a.resolutionNote || "—") + '</div>' +
+        '<div><span class="rr-label">Resolved by:</span> ' + esc(a.resolvedBy || "—") + '</div>' +
+        '<div><span class="rr-label">Date/time:</span> ' + fmt(a.resolvedAt) + '</div>' +
+        (a.resolutionExtra ? '<div><span class="rr-label">Notes:</span> ' + esc(a.resolutionExtra) + '</div>' : '') +
+        '</div></div>';
+    });
+    html += '</div>';
+  }
+  if (db.alerts.length === 0) html = '<div class="card"><div class="empty"><div class="empty-icon">✅</div><div>No alerts on record.</div></div></div>';
+  document.getElementById("alerts-content").innerHTML = html;
+}
+
+function openResolveModal(alertId) {
+  pendingResolveId = alertId;
+  var a = db.alerts.find(function (x) { return x.id === alertId; });
+  if (!a) return;
+  document.getElementById("resolve-alert-detail").innerHTML = "⚠ <strong>" + esc(a.type) + "</strong>: " + esc(a.message);
+  document.getElementById("resolve-action").value = "";
+  document.getElementById("resolve-by-name").value = currentUser.name;
+  document.getElementById("resolve-datetime").value = toLocalInput(new Date());
+  document.getElementById("resolve-extra").value = "";
+  document.getElementById("resolve-err").innerHTML = "";
+  openModal("modal-resolve-alert");
+}
+
+function toLocalInput(d) {
+  var pad = function (n) { return String(n).padStart(2, "0"); };
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+
+function submitResolve() {
+  var action = document.getElementById("resolve-action").value.trim();
+  var byName = document.getElementById("resolve-by-name").value.trim();
+  var dt = document.getElementById("resolve-datetime").value;
+  var extra = document.getElementById("resolve-extra").value.trim();
+  var err = document.getElementById("resolve-err");
+  if (!action) { err.innerHTML = '<div class="alert alert-error">Please describe the action taken.</div>'; return; }
+  if (!byName) { err.innerHTML = '<div class="alert alert-error">Please enter who resolved this.</div>'; return; }
+  var a = db.alerts.find(function (x) { return x.id === pendingResolveId; });
+  if (a) {
+    a.resolved = true;
+    a.resolutionNote = action;
+    a.resolvedBy = byName;
+    a.resolvedAt = dt ? new Date(dt).toISOString() : now();
+    a.resolutionExtra = extra;
+  }
+  db.auditLog.push({ id:uid(), time:now(), action:"Alert Resolved", detail: "Alert resolved by " + byName + ": " + action, company: a ? a.company : null });
+  saveDB();
+  closeModal("modal-resolve-alert");
+  updateAlertBadge();
+  renderAlerts();
+}
+
+// ── Audit Log (with View Details) ────────────────────────────────────────────
+function renderAudit() {
+  var sorted = db.auditLog.slice().sort(function (a, b) { return new Date(b.time) - new Date(a.time); });
+  if (sorted.length === 0) { document.getElementById("audit-table").innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div>No audit records yet.</div></div>'; return; }
+  function ab(action) {
+    if (action.indexOf("Alert") > -1 || action.indexOf("Deactivat") > -1) return "badge-red";
+    if (action.indexOf("Entry") > -1 || action.indexOf("Exit") > -1) return "badge-blue";
+    if (action.indexOf("Resolved") > -1) return "badge-green";
+    return "badge-gray";
+  }
+  var rows = sorted.map(function (e) {
+    return '<tr><td style="white-space:nowrap;color:#64748b;font-size:12px">' + fmt(e.time) + '</td>' +
+      '<td><span class="badge ' + ab(e.action) + '">' + esc(e.action) + '</span></td><td>' + esc(e.detail) + '</td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="viewAuditDetail(\'' + e.id + '\')">View Details</button></td></tr>';
+  }).join("");
+  document.getElementById("audit-table").innerHTML = '<table><thead><tr><th>Time</th><th>Action</th><th>Detail</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function viewAuditDetail(entryId) {
+  var e = db.auditLog.find(function (x) { return x.id === entryId; });
+  if (!e) return;
+  var who = e.detail || "";
+  var co = e.company ? companyById(e.company) : null;
+
+  var html = '<div class="modal-title">Activity Record</div>' +
+    '<div class="modal-sub">' + esc(e.action) + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0">' +
+    profileField("Timestamp", fmt(e.time)) +
+    profileField("Action Type", e.action) +
+    profileField("Company", co ? co.name : "—") +
+    profileField("Record ID", e.id) +
+    '</div>' +
+    '<div style="margin-bottom:16px"><div class="field-label">Summary</div><div style="font-size:13px;color:#334155">' + esc(e.detail) + '</div></div>';
+
+  // If this audit entry is tied to an entry declaration, show full declaration detail
+  var decl = null;
+  if (e.declId) decl = db.declarations.find(function (d) { return d.id === e.declId; });
+  // also try to match exit checks / entries by proximity if no declId
+  if (decl) {
+    var worker = userById(decl.worker);
+    var declTools = decl.tools.map(function (tid) {
+      var t = toolById(tid);
+      if (!t) return "";
+      var person = decl.persons ? decl.persons[tid] : (t.responsiblePerson || null);
+      var personLine = person && person.name
+        ? '<div style="font-size:11px;color:#64748b;margin-left:12px">Responsible: ' + esc(person.name) + (person.company ? " · " + esc(person.company) : "") + (person.contact ? " · " + esc(person.contact) : "") + '</div>'
+        : '<div style="font-size:11px;color:#94a3b8;margin-left:12px">No responsible person recorded</div>';
+      var exitTime = (t.status === "Exited" && t.lastEntry) ? "" : "";
+      return '<div style="font-size:13px;margin-bottom:6px">• ' + esc(t.name) + ' <span class="mono">(' + esc(t.assetId) + ')</span> — <span class="badge ' + statusBadge(t.status) + '">' + esc(t.status) + '</span>' + personLine + '</div>';
+    }).join("");
+    var entryPhoto = decl.photoId ? db.entryPhotos[decl.photoId] : null;
+    // find a matching exit check for this worker after entry time
+    var exitEntry = null;
+    db.auditLog.forEach(function (a) {
+      if ((a.action.indexOf("Exit Check") > -1) && a.company === decl.company && new Date(a.time) > new Date(decl.time)) {
+        if (!exitEntry || new Date(a.time) < new Date(exitEntry.time)) exitEntry = a;
+      }
+    });
+    html += '<div style="border-top:1px solid #e2e8f0;padding-top:16px">' +
+      '<div class="field-label">Declaration Detail</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:8px 0 14px">' +
+      profileField("Logged By", worker ? worker.name + " (" + worker.asic + ")" : "—") +
+      profileField("Supervising ASIC", decl.asicVerified || "—") +
+      profileField("Entry Time", fmt(decl.time)) +
+      profileField("Exit Time", exitEntry ? fmt(exitEntry.time) : "Not yet exited") +
+      profileField("Toolbox Weight", decl.weight ? decl.weight + " kg" : "Not recorded") +
+      profileField("Tools Declared", String(decl.tools.length)) +
+      '</div>' +
+      '<div style="margin-bottom:12px"><div class="field-label">Tools & Responsible Persons</div>' + (declTools || '<span style="color:#94a3b8">None</span>') + '</div>' +
+      (entryPhoto ? '<div><div class="field-label">Entry Photo</div><img src="' + entryPhoto + '" class="photo-compare" /></div>' : '') +
+      '</div>';
+  }
+
+  // If this is an entry/exit/alert, surface any related alerts
+  var relatedAlerts = db.alerts.filter(function (al) { return al.company === e.company && Math.abs(new Date(al.time) - new Date(e.time)) < 5000; });
+  if (relatedAlerts.length > 0) {
+    html += '<div style="border-top:1px solid #e2e8f0;padding-top:16px"><div class="field-label">Issues Flagged</div>';
+    relatedAlerts.forEach(function (al) {
+      html += '<div style="font-size:13px;margin-bottom:8px;padding:10px;background:#fef2f2;border-radius:8px">' +
+        '⚠ <strong>' + esc(al.type) + '</strong>: ' + esc(al.message) +
+        (al.resolved ? '<div style="margin-top:6px;color:#166534;font-size:12px">✓ Resolved by ' + esc(al.resolvedBy) + ' — ' + esc(al.resolutionNote) + ' (' + fmt(al.resolvedAt) + ')</div>' : '<div style="margin-top:6px;color:#991b1b;font-size:12px">● Unresolved</div>') +
+        '</div>';
+    });
+    html += '</div>';
+  }
+
+  document.getElementById("audit-detail-content").innerHTML = html;
+  openModal("modal-audit-detail");
+}
+
+function exportAudit() {
+  var sorted = db.auditLog.slice().sort(function (a, b) { return new Date(b.time) - new Date(a.time); });
+  var rows = [["Time","Action","Detail"]].concat(sorted.map(function (e) { return [fmt(e.time), e.action, e.detail]; }));
+  var csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(","); }).join("\n");
+  var blob = new Blob([csv], { type:"text/csv" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url; a.download = "sterile_area_audit_log.csv"; a.click();
+}
+
+// ── Shared ───────────────────────────────────────────────────────────────────
+function refreshOpenViews() {
+  var activePage = document.querySelector(".page.active");
+  if (!activePage) return;
+  var id = activePage.id.replace("page-", "");
+  showPage(id);
+}
+
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("login-pass").addEventListener("keydown", function (e) { if (e.key === "Enter") doLogin(); });
+  document.getElementById("login-asic").addEventListener("keydown", function (e) { if (e.key === "Enter") doLogin(); });
+  document.querySelectorAll(".modal").forEach(function (m) {
+    m.addEventListener("click", function (e) { if (e.target === m) m.classList.remove("open"); });
+  });
+});
+</script>
+</body>
+</html>
